@@ -1,18 +1,20 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from "expo-router";
+import { View } from "react-native";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
+import { colors } from "@/theme";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
-
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+// Wraps every page: our Header on top, the current page in the middle, our Footer at the bottom.
+// To add a page, just make a new file in src/app (e.g. profile.tsx becomes "/profile").
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Header />
+      <View style={{ flex: 1 }}>
+        {/* headerShown: false hides Expo's default top bar, since we have our own Header */}
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+      </View>
+      <Footer />
+    </View>
   );
 }

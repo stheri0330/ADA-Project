@@ -1,42 +1,50 @@
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { usePathname, useRouter } from "expo-router";
 import { colors } from "@/theme";
 
-// Pages in the nav. Each key is passed to onNavigate when its pill is pressed.
-export type PageKey = "home" | "qa" | "events";
+// Pages in the nav. Each href matches a file in src/app ("/" is index.tsx).
 
-const NAV_LINKS: { key: PageKey; label: string }[] = [
-  { key: "home", label: "Home" },
-  { key: "qa", label: "Q&A Board" },
-  { key: "events", label: "Upcoming Events" },
-];
+const NAV_LINKS = [
+  { key: "home", label: "Home", href: "/" },
+  { key: "qa", label: "Q&A Board", href: "/qa" },
+  { key: "events", label: "Upcoming Events", href: "/events" },
+] as const;
 
 /**
- * Shared header for every screen.
+ * Shared header, drawn once for every page by src/app/_layout.tsx.
+ *
+ * It highlights the pill for the page you're on (from the address, e.g. "/events").
+ * Search: typing puts the text in the address as ?q=..., and the Upcoming Events
+ * page reads it from there. Pressing Enter on another page jumps to Upcoming Events.
  *
  * Props:
- *   active     - which pill to highlight: "home" | "qa" | "events"
- *   user       - { name, avatarUrl }  (TODO: the signed-in user from your backend)
- *   onNavigate - called with a key from NAV_LINKS, e.g. (key) => router.push(...)
- *   onSearch   - called with the search text every time it changes
+ *   user - { name, avatarUrl }  (TODO: the signed-in user from your backend)
  */
 type HeaderProps = {
-  active: PageKey;
   user?: { name?: string; avatarUrl?: string };
-  onNavigate?: (page: PageKey) => void;
-  onSearch?: (text: string) => void;
 };
 
-export default function Header({ active, user = {}, onNavigate = () => {}, onSearch = () => {} }: HeaderProps) {
+export default function Header({ user = {} }: HeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname(); // e.g. "/", "/qa", "/events"
+
+  const handleSearch = (text: string) => {
+    if (pathname === "/events") router.setParams({ q: text.trim() });
+  };
+  const submitSearch = (text: string) => {
+    router.navigate({ pathname: "/events", params: { q: text.trim() } });
+  };
+
   return (
     <View style={styles.header}>
       <View style={styles.navBar}>
         {NAV_LINKS.map((link) => {
-          const isActive = link.key === active;
+          const isActive = link.href === pathname;
           return (
             <Pressable
               key={link.key}
-              onPress={() => onNavigate(link.key)}
+              onPress={() => router.navigate(link.href)}
               accessibilityRole="link"
               accessibilityState={{ selected: isActive }}
               style={[styles.pill, isActive && styles.pillActive]}
@@ -50,7 +58,8 @@ export default function Header({ active, user = {}, onNavigate = () => {}, onSea
           <TextInput
             placeholder="Search"
             placeholderTextColor="#999"
-            onChangeText={(text) => onSearch(text.trim())}
+            onChangeText={handleSearch}
+            onSubmitEditing={(e) => submitSearch(e.nativeEvent.text)}
             returnKeyType="search"
             style={styles.searchInput}
             accessibilityLabel="Search"
